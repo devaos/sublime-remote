@@ -1,4 +1,10 @@
-import sublime, sublime_plugin, threading, subprocess
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2014 Ari Aosved
+# http://github.com/devaos/sublime-remote/blob/master/LICENSE
+
+import sublime, sublime_plugin, threading, subprocess, sys, os
+import remote.sublime
 
 class RemoteEdit(sublime_plugin.EventListener):
   def on_post_save(self, view):
@@ -9,33 +15,26 @@ class RemoteEdit(sublime_plugin.EventListener):
 class RemoteEditThread(threading.Thread):
   view = None
 
-  def __init__(self, fileName):
+  def __init__(self, filename):
       threading.Thread.__init__(self)
-      self.fileName = fileName
+      self.filename = filename
 
   def show_quick_panel(self, options, done):
     w = self.view.window()
     w.show_quick_panel(options, done)
 
   def run(self):
-    fileName = self.fileName
-
+    filename = self.filename
     w = sublime.active_window()
-    settings = w.project_data()
 
-    found = None
-    for folder in settings['folders']:
-      if fileName.startswith(folder['path']) and folder.get('remotePath', None) != None:
-        found = folder
-        break
-
+    found = remote.sublime.findProjectByFile(w.project_data(), filename)
     if found == None:
       return False
 
     target = "'$1' '$2$3'"
-    target = target.replace( "$1", fileName )
+    target = target.replace( "$1", filename )
     target = target.replace( "$2", found['remotePath'] )
-    target = target.replace( "$3", fileName[len(folder['path'])+1:] )
+    target = target.replace( "$3", filename[len(found['path'])+1:] )
 
     cmd = "scp " + found['remoteOptions'] + " " + target
 
