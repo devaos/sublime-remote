@@ -1,0 +1,10 @@
+[
+	{ "caption": "-" },
+    {
+        "caption": "Remote",
+        "children":
+        [
+            { "command": "add_remote", "caption": "Rsync From Remote...", "args": {"paths": []} }
+        ]
+    }
+]
