@@ -21,8 +21,8 @@ git clone https://github.com/devaos/sublime-remote.git ~/Library/Application Sup
 ###Map a remote directory to your local project directory
 
 * Right-click on a project folder in your side-bar and select Remote > Map to Remote...
-* Enter the remote host and path, as you would with scp or rsync ("host:/path").  You can optionally use "vagrant" as the host.
-* If you entered "vagrant" it will auto-select the vagrant VM if you only have 1 running, otherwise it will prompt you to select which vagrant VM you wish to map.
+* Enter the remote host and path, as you would with scp or rsync ("user@host:/path/to/dir").
+* If you entered "vagrant" as the host it will auto-select the vagrant VM if you only have 1, otherwise it will prompt you to select which vagrant VM you wish to map.
 
 Once the project directory is mapped, anytime you save a file Sublime will attempt to scp the file to the remote host.
 
