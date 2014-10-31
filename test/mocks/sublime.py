@@ -2,11 +2,20 @@
 
 
 class MockWindow:
-    def show_quick_panel(options, done):
+    _project_data = {}
+
+    def show_quick_panel(self, options, done):
         return False
 
-    def show_input_panel(caption, text, done, change, cancel):
+    def show_input_panel(self, caption, text, done, change, cancel):
         return False
+
+    def project_data(self):
+        return self._project_data
+
+    def set_project_data(self, data):
+        self._project_data = data
+        return True
 
 
 class MockSublime:

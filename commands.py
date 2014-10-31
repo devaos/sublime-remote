@@ -3,16 +3,19 @@
 # Copyright (c) 2014 Ari Aosved
 # http://github.com/devaos/sublime-remote/blob/master/LICENSE
 
-import sublime
-import sublime_plugin
-import threading
-import subprocess
+import os
 import re
 import sys
-import os
+import sublime
+import sublime_plugin
+import subprocess
+import threading
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import remote.sublime_api as sublime_api
+import remote.sync_api as sync_api
+import remote.vagrant_api as vagrant_api
+
 
 # =============================================================================
 
@@ -34,65 +37,6 @@ class AddRemoteThread(threading.Thread):
     def __init__(self, localPath):
         self.localPath = localPath
         threading.Thread.__init__(self)
-
-    # =========================================================================
-
-    def ssh_opt(self, vm):
-        p1 = subprocess.Popen(["/usr/bin/vagrant", "ssh-config", "33ca156"],
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        p2 = subprocess.Popen(["/usr/bin/awk", "-v", "ORS= ",
-                              '{if($1 && $2){print "-o " $1 "=" $2}}'],
-                              stdin=p1.stdout, stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-
-        opt = ""
-        while True:
-            buf = p2.stdout.readline()
-            decoded = buf.decode("utf-8").rstrip()
-            if decoded == '' and p2.poll() is not None:
-                break
-            if decoded == '':
-                continue
-            opt += decoded
-
-            return opt
-
-    # =========================================================================
-
-    def rsync(self):
-        opt = self.ssh_opt(self.vm)
-        if opt == '':
-            return False
-
-        if re.match('/$', self.remotePath) is None:
-            self.remotePath += "/"
-
-        cmd = "/usr/bin/rsync -e 'ssh " + opt + "' -avz '" + self.remotePath \
-            + "' '" + self.localPath + "'"
-
-        print("Rsync command", cmd)
-
-        ret = subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=True)
-        if ret != 0:
-            print("Rsync failed with", ret)
-            return False
-
-        w = sublime.active_window()
-        settings = w.project_data()
-        print("Project settings", settings)
-
-        changed = False
-        for folder in settings['folders']:
-            if folder['path'] == self.localPath:
-                print("Folder settings", folder)
-                folder['remotePath'] = self.remotePath
-                folder['remoteOptions'] = opt
-                changed = True
-
-        if changed:
-            print("New project settings", settings)
-            w.set_project_data(settings)
 
     # =========================================================================
 
@@ -122,7 +66,17 @@ class AddRemoteThread(threading.Thread):
                 return False
             self.vm = parts[0]
             print("VM selected", self.vm)
-            self.rsync()
+
+            ssh = vagrant_api.get_ssh_settings(self.vm)
+            if ssh == '':
+                return False
+
+            if sync_api.rsync(self.localPath, self.remotePath, ssh) is True:
+                w = sublime.active_window()
+                sublime_api.update_project_settings(w, self.localPath, {
+                                                    "remotePath":
+                                                    self.remotePath,
+                                                    "remoteOptions": ssh})
 
         def done_with_folder(remotePath):
             print("Remote path", remotePath)
@@ -135,3 +89,38 @@ class AddRemoteThread(threading.Thread):
         sublime.set_timeout(lambda: sublime_api.show_input_panel(
                             "Sync remote to this folder", "", done_with_folder,
                             None, None), 10)
+
+# =============================================================================
+
+
+class RemoteEdit(sublime_plugin.EventListener):
+    def on_post_save(self, view):
+        remoteEditThread = RemoteEditThread(view.file_name())
+        remoteEditThread.view = view
+        remoteEditThread.start()
+
+# =============================================================================
+
+
+class RemoteEditThread(threading.Thread):
+    view = None
+
+    # =========================================================================
+
+    def __init__(self, filename):
+        threading.Thread.__init__(self)
+        self.filename = filename
+
+    # =========================================================================
+
+    def run(self):
+
+        filename = self.filename
+        w = sublime.active_window()
+
+        found = sublime_api.project_by_file(w, filename)
+        if found is None:
+            return False
+
+        return sync_api.scp(found['path'], filename, found['remotePath'],
+                            found['remoteOptions'])
