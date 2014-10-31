@@ -6,7 +6,7 @@ import unittest
 import env
 import mocks.sublime
 sys.modules['sublime'] = mocks.sublime.MockSublime()
-import remote.sublime_api as sublime_api
+import remote.sublime as sublime_api
 
 
 class TestSublimeHelperFunctions(unittest.TestCase):

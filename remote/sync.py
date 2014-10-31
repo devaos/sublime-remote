@@ -3,6 +3,8 @@
 # Copyright (c) 2014 Ari Aosved
 # http://github.com/devaos/sublime-remote/blob/master/LICENSE
 
+"""This module implements an API layer for sync related shell commands."""
+
 import re
 import subprocess
 

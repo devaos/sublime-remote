@@ -3,6 +3,8 @@
 # Copyright (c) 2014 Ari Aosved
 # http://github.com/devaos/sublime-remote/blob/master/LICENSE
 
+"""This module implements the Sublime Text 3 commands provided by remote."""
+
 import os
 import re
 import sys
@@ -12,10 +14,9 @@ import subprocess
 import threading
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-import remote.sublime_api as sublime_api
-import remote.sync_api as sync_api
-import remote.vagrant_api as vagrant_api
-
+import remote.sublime as sublime_api
+import remote.sync as sync_api
+import remote.vagrant as vagrant_api
 
 # =============================================================================
 
@@ -25,8 +26,6 @@ class AddRemoteCommand(sublime_plugin.TextCommand):
         print("Local path", paths[0])
         addRemoteThread = AddRemoteThread(paths[0])
         addRemoteThread.start()
-
-# =============================================================================
 
 
 class AddRemoteThread(threading.Thread):
@@ -99,8 +98,6 @@ class RemoteEdit(sublime_plugin.EventListener):
         remoteEditThread.view = view
         remoteEditThread.start()
 
-# =============================================================================
-
 
 class RemoteEditThread(threading.Thread):
     view = None
@@ -114,7 +111,6 @@ class RemoteEditThread(threading.Thread):
     # =========================================================================
 
     def run(self):
-
         filename = self.filename
         w = sublime.active_window()
 
