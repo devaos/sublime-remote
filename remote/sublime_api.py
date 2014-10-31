@@ -5,7 +5,7 @@
 
 """This module implements an API layer for Sublime related functionality."""
 
-import sublime
+import sublime as s
 
 # =============================================================================
 
@@ -54,10 +54,14 @@ def update_project_settings(window, filename, settings):
 
 
 def show_quick_panel(options, done):
-    w = sublime.active_window()
+    """Let the user pick from a selection of options."""
+
+    w = s.active_window()
     w.show_quick_panel(options, done)
 
 
 def show_input_panel(caption, text, done, change, cancel):
-    w = sublime.active_window()
+    """Let the user enter a value."""
+
+    w = s.active_window()
     w.show_input_panel(caption, text, done, change, cancel)

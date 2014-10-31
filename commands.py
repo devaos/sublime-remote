@@ -14,14 +14,16 @@ import subprocess
 import threading
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-import remote.sublime as sublime_api
-import remote.sync as sync_api
-import remote.vagrant as vagrant_api
+import remote.sublime_api as sublime_api
+import remote.sync_api as sync_api
+import remote.vagrant_api as vagrant_api
 
 # =============================================================================
 
 
 class AddRemoteCommand(sublime_plugin.TextCommand):
+    """Map a new remote path to a local project path."""
+
     def run(self, edit, paths):
         print("Local path", paths[0])
         addRemoteThread = AddRemoteThread(paths[0])
@@ -29,6 +31,8 @@ class AddRemoteCommand(sublime_plugin.TextCommand):
 
 
 class AddRemoteThread(threading.Thread):
+    """Don't lock up Sublime while we configure ourselves."""
+
     localPath = ""
     remotePath = ""
     vm = ""
@@ -93,6 +97,8 @@ class AddRemoteThread(threading.Thread):
 
 
 class RemoteEdit(sublime_plugin.EventListener):
+    """Sync a local change out."""
+
     def on_post_save(self, view):
         remoteEditThread = RemoteEditThread(view.file_name())
         remoteEditThread.view = view
@@ -100,6 +106,8 @@ class RemoteEdit(sublime_plugin.EventListener):
 
 
 class RemoteEditThread(threading.Thread):
+    """Don't lock up Sublime while we configure ourselves."""
+
     view = None
 
     # =========================================================================

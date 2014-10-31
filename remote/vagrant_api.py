@@ -11,6 +11,8 @@ import subprocess
 
 
 def get_ssh_settings(vm):
+    """Pull a list of all running vagrant VMs for the user to choose from."""
+
     p1 = subprocess.Popen(["/usr/bin/vagrant", "ssh-config", "33ca156"],
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
