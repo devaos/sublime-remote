@@ -25,73 +25,73 @@ class AddRemoteCommand(sublime_plugin.TextCommand):
     """Map a new remote path to a local project path."""
 
     def run(self, edit, paths):
-        print("Local path", paths[0])
-        addRemoteThread = AddRemoteThread(paths[0])
-        addRemoteThread.start()
+        sublime.set_timeout_async(lambda: add_remote_async(paths[0], None), 0)
 
 
-class AddRemoteThread(threading.Thread):
-    """Don't lock up Sublime while we configure ourselves."""
+def add_remote_async(path, callback):
+    print("Local path", path)
 
-    localPath = ""
-    remotePath = ""
-    vm = ""
+    def done_with_folder(userInput):
+        print("Remote path", userInput)
+        parts = userInput.split(":")
+        if len(parts) == 2 and parts[0] == "vagrant":
+            vms = ["Select VM below...", "---"]
+            vagrant_api.get_vm_list(vms)
+            if len(vms) == 3:
+                done_with_vm(userInput, vms, 2)
+            else:
+                sublime_api.show_quick_panel(vms,
+                                             lambda i=-1:
+                                             done_with_vm(userInput, vms, i))
+        else:
+            do_it(userInput, "")
 
-    def __init__(self, localPath):
-        self.localPath = localPath
-        threading.Thread.__init__(self)
+    def done_with_vm(remotePath, vms, userSelection):
+        if userSelection == -1:
+            return False
 
-    # =========================================================================
+        vm = vagrant_api.parse_vm_id(vms[userSelection])
+        if vm is None:
+            return False
+        print("VM selected", vm)
 
-    def run(self):
-        p1 = subprocess.Popen(["/usr/bin/vagrant", "global-status"],
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sshOptions = vagrant_api.get_ssh_options(vm)
 
-        opt = ['Select VM below...', '---']
-        while True:
-            buf = p1.stdout.readline()
-            decoded = buf.decode("utf-8").rstrip()
-            if decoded == '' and p1.poll() is not None:
-                break
-            if decoded == '':
-                continue
-            parts = re.split('\s+', decoded)
-            if len(parts) == 5 and parts[0] != 'id' \
-               and re.match('^[0-9a-f]{1,7}$', parts[0]):
-                opt.append(decoded)
+        if sshOptions != "":
+            do_it(remotePath, sshOptions)
 
-        def done_with_vm(i=-1):
-            if i == -1:
-                return False
-            parts = re.split('\s+', opt[i])
-            if len(parts) != 5 or parts[0] == 'id' \
-               or re.match('^[0-9a-f]{1,7}$', parts[0]) is None:
-                return False
-            self.vm = parts[0]
-            print("VM selected", self.vm)
+    def do_it(remotePath, sshOptions):
+        w = sublime.active_window()
+        settings = {"remotePath": remotePath, "remoteOptions": sshOptions}
+        sublime_api.update_project_settings(w, path, settings)
+        if callback is not None:
+            callback(settings)
 
-            ssh = vagrant_api.get_ssh_settings(self.vm)
-            if ssh == '':
-                return False
+    sublime_api.show_input_panel("Sync remote to this folder", "",
+                                 done_with_folder, None, None)
 
-            if sync_api.rsync(self.localPath, self.remotePath, ssh) is True:
-                w = sublime.active_window()
-                sublime_api.update_project_settings(w, self.localPath, {
-                                                    "remotePath":
-                                                    self.remotePath,
-                                                    "remoteOptions": ssh})
+# =============================================================================
 
-        def done_with_folder(remotePath):
-            print("Remote path", remotePath)
-            parts = remotePath.split(':')
-            if len(parts) == 2 and parts[0] == 'vagrant':
-                self.remotePath = remotePath
-                sublime.set_timeout(lambda: sublime_api.show_quick_panel(
-                                    opt, done_with_vm), 10)
 
-        sublime.set_timeout(lambda: sublime_api.show_input_panel(
-                            "Sync remote to this folder", "", done_with_folder,
-                            None, None), 10)
+class FromRemote(sublime_plugin.TextCommand):
+    """Sync a local directory from  a remote directory."""
+
+    def run(self, edit, paths):
+        sublime.set_timeout_async(lambda: from_remote_async(paths[0]), 0)
+
+
+def from_remote_async(path):
+    print("Local path", path)
+    w = sublime.active_window()
+
+    found = sublime_api.project_by_path(w, path)
+    if found is None or found["remotePath"] == "":
+        add_remote_async(path, lambda o: sync_api.rsync_from_remote(path,
+                         o["remotePath"], o["remoteOptions"]))
+        return True
+
+    return sync_api.rsync_from_remote(found["path"], found["remotePath"],
+                                      found["remoteOptions"])
 
 # =============================================================================
 
@@ -99,32 +99,14 @@ class AddRemoteThread(threading.Thread):
 class RemoteEdit(sublime_plugin.EventListener):
     """Sync a local change out."""
 
-    def on_post_save(self, view):
-        remoteEditThread = RemoteEditThread(view.file_name())
-        remoteEditThread.view = view
-        remoteEditThread.start()
-
-
-class RemoteEditThread(threading.Thread):
-    """Don't lock up Sublime while we configure ourselves."""
-
-    view = None
-
-    # =========================================================================
-
-    def __init__(self, filename):
-        threading.Thread.__init__(self)
-        self.filename = filename
-
-    # =========================================================================
-
-    def run(self):
-        filename = self.filename
+    def on_post_save_async(self, view):
+        filename = view.file_name()
         w = sublime.active_window()
 
-        found = sublime_api.project_by_file(w, filename)
+        found = sublime_api.project_by_path(w, filename)
         if found is None:
             return False
 
-        return sync_api.scp(found['path'], filename, found['remotePath'],
-                            found['remoteOptions'])
+        return sync_api.scp_to_remote(found["path"], filename,
+                                      found["remotePath"],
+                                      found["remoteOptions"])

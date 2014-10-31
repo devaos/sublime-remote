@@ -6,5 +6,5 @@
 Install plugin:
 
 ```bash
-git clone https://github.com/devaos/sublime-remote.git ~/Library/Application Support/Sublime Text 3/Packages/remote
+git clone https://github.com/devaos/sublime-remote.git ~/Library/Application Support/Sublime Text 3/Packages/Remote
 ```

@@ -5,12 +5,12 @@
 
 """This module implements an API layer for Sublime related functionality."""
 
-import sublime as s
+import sublime
 
 # =============================================================================
 
 
-def project_by_file(window, filename):
+def project_by_path(window, filename):
     """Returns the project folder which matches the base path of the file."""
 
     if window is None:
@@ -18,12 +18,12 @@ def project_by_file(window, filename):
 
     projects = window.project_data()
 
-    if type(projects) != dict or projects.get('folders', None) is None:
+    if type(projects) != dict or projects.get("folders", None) is None:
         return None
 
-    for folder in projects['folders']:
-        if filename.startswith(folder['path']) \
-           and folder.get('remotePath', None) is not None:
+    for folder in projects["folders"]:
+        if filename.startswith(folder["path"]) \
+           and folder.get("remotePath", None) is not None:
             return folder
 
     return None
@@ -37,11 +37,11 @@ def update_project_settings(window, filename, settings):
 
     projects = window.project_data()
 
-    if type(projects) != dict or projects.get('folders', None) is None:
+    if type(projects) != dict or projects.get("folders", None) is None:
         return None
 
-    for folder in projects['folders']:
-        if filename.startswith(folder['path']):
+    for folder in projects["folders"]:
+        if filename.startswith(folder["path"]):
             print("Folder settings", folder)
             for k in iter(settings):
                 folder[k] = settings[k]
@@ -56,12 +56,12 @@ def update_project_settings(window, filename, settings):
 def show_quick_panel(options, done):
     """Let the user pick from a selection of options."""
 
-    w = s.active_window()
+    w = sublime.active_window()
     w.show_quick_panel(options, done)
 
 
 def show_input_panel(caption, text, done, change, cancel):
     """Let the user enter a value."""
 
-    w = s.active_window()
+    w = sublime.active_window()
     w.show_input_panel(caption, text, done, change, cancel)

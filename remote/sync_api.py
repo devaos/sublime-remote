@@ -11,7 +11,7 @@ import subprocess
 # =============================================================================
 
 
-def rsyncFromRemote(localPath, remotePath, sshSettings):
+def rsync_from_remote(localPath, remotePath, sshSettings):
     """Sync local from remote."""
 
     opts = []
@@ -19,7 +19,7 @@ def rsyncFromRemote(localPath, remotePath, sshSettings):
         opts.append("-e 'ssh " + sshSettings + "'")
     opts.append("-avz")
 
-    if re.match('/$', remotePath) is None:
+    if re.match("/$", remotePath) is None:
         remotePath += "/"
 
     cmd = "/usr/bin/rsync " + " ".join(opts) \
@@ -36,7 +36,7 @@ def rsyncFromRemote(localPath, remotePath, sshSettings):
     return True
 
 
-def scpToRemote(localProjectPath, localPath, remotePath, sshSettings):
+def scp_to_remote(localProjectPath, localPath, remotePath, sshSettings):
     """Sync a single local file to remote."""
 
     target = "'$1' '$2$3'"
