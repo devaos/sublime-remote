@@ -65,3 +65,15 @@ def show_input_panel(caption, text, done, change, cancel):
 
     w = sublime.active_window()
     w.show_input_panel(caption, text, done, change, cancel)
+
+
+def ok_cancel_dialog(ok):
+    """Make the user confirm an action."""
+
+    return sublime.ok_cancel_dialog(ok)
+
+
+def error_message(msg):
+    """Let the user know about an error."""
+
+    return sublime.error_message(msg)

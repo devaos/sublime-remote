@@ -30,13 +30,38 @@ class AddRemoteCommand(sublime_plugin.TextCommand):
 
 def add_remote_async(path, callback):
     print("Local path", path)
+    w = sublime.active_window()
 
     def done_with_folder(userInput):
         print("Remote path", userInput)
+
+        if len(userInput) == 0:
+            do_it("", "")
+            return True
+
         parts = userInput.split(":")
-        if len(parts) == 2 and parts[0] == "vagrant":
+        if len(parts) != 2:
+            sublime_api.error_message("The remote path you entered does not" +
+                                      " appear to contain a host")
+            return False
+
+        more = parts[0].split("@")
+        host = ""
+        if len(more) > 2:
+            sublime_api.error_message("Unable to parse the remote path you" +
+                                      " entered")
+            return False
+        elif len(more) == 2:
+            host = more[1]
+        else:
+            host = more[0]
+
+        if host == "vagrant":
             vms = ["Select VM below...", "---"]
             vagrant_api.get_vm_list(vms)
+            if len(vms) == 2:
+                sublime_api.error_message("No vagrant VMs found")
+                return False
             if len(vms) == 3:
                 done_with_vm(userInput, vms, 2)
             else:
@@ -45,6 +70,8 @@ def add_remote_async(path, callback):
                                              done_with_vm(userInput, vms, i))
         else:
             do_it(userInput, "")
+
+        return True
 
     def done_with_vm(remotePath, vms, userSelection):
         if userSelection == -1:
@@ -61,37 +88,64 @@ def add_remote_async(path, callback):
             do_it(remotePath, sshOptions)
 
     def do_it(remotePath, sshOptions):
-        w = sublime.active_window()
         settings = {"remotePath": remotePath, "remoteOptions": sshOptions}
         sublime_api.update_project_settings(w, path, settings)
         if callback is not None:
             callback(settings)
 
-    sublime_api.show_input_panel("Sync remote to this folder", "",
-                                 done_with_folder, None, None)
+    remotePath = ""
+    found = sublime_api.project_by_path(w, path)
+    if found is not None and found["remotePath"] != "":
+        remotePath = found["remotePath"]
+
+    sublime_api.show_input_panel("Sync this folder to remote folder:",
+                                 remotePath, done_with_folder, None, None)
 
 # =============================================================================
 
 
 class FromRemote(sublime_plugin.TextCommand):
-    """Sync a local directory from  a remote directory."""
+    """Sync a local directory from a remote directory."""
 
     def run(self, edit, paths):
         sublime.set_timeout_async(lambda: from_remote_async(paths[0]), 0)
 
 
 def from_remote_async(path):
-    print("Local path", path)
+    print("From local path", path)
     w = sublime.active_window()
 
     found = sublime_api.project_by_path(w, path)
     if found is None or found["remotePath"] == "":
-        add_remote_async(path, lambda o: sync_api.rsync_from_remote(path,
+        add_remote_async(path, lambda o: sync_api.rsync_remote(
+                         o["remotePath"], path, o["remoteOptions"]))
+        return True
+
+    return sync_api.rsync_remote(found["remotePath"], found["path"],
+                                 found["remoteOptions"])
+
+# =============================================================================
+
+
+class ToRemote(sublime_plugin.TextCommand):
+    """Sync a local directory to a remote directory."""
+
+    def run(self, edit, paths):
+        sublime.set_timeout_async(lambda: to_remote_async(paths[0]), 0)
+
+
+def to_remote_async(path):
+    print("To local path", path)
+    w = sublime.active_window()
+
+    found = sublime_api.project_by_path(w, path)
+    if found is None or found["remotePath"] == "":
+        add_remote_async(path, lambda o: sync_api.rsync_remote(path,
                          o["remotePath"], o["remoteOptions"]))
         return True
 
-    return sync_api.rsync_from_remote(found["path"], found["remotePath"],
-                                      found["remoteOptions"])
+    return sync_api.rsync_remote(found["path"], found["remotePath"],
+                                 found["remoteOptions"])
 
 # =============================================================================
 

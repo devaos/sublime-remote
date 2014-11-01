@@ -5,7 +5,8 @@
         "children":
         [
             { "command": "add_remote", "caption": "Map to Remote...", "args": {"paths": []} },
-            { "command": "from_remote", "caption": "Rsync Local from Remote", "args": {"paths": []} }
+            { "command": "from_remote", "caption": "Rsync Local from Remote", "args": {"paths": []} },
+            { "command": "to_remote", "caption": "Rsync Local to Remote", "args": {"paths": []} }
         ]
     }
 ]
