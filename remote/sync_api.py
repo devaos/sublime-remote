@@ -34,14 +34,13 @@ def rsync_remote(fromPath, toPath, sshSettings):
 
     toPath = re.sub("/$", "", toPath)
 
-    rsync = "/usr/bin/rsync -avz --delete "
+    rsync = "/usr/bin/rsync -aOz --delete --no-perms "
     cmd = rsync + opts + " '" + fromPath + "'" + " '" + toPath + "'"
 
     doit = sublime_api.ok_cancel_dialog("Are you sure you want to run the" +
                                         " following command? It will" +
                                         " overwrite the target" +
-                                        " directory.\n\n" + rsync + "\n  " +
-                                        fromPath + "\n  " + toPath)
+                                        " directory.\n\n" + cmd)
 
     if doit is not True:
         return False
@@ -79,10 +78,7 @@ def scp_to_remote(localProjectPath, localPath, remotePath, sshSettings):
 #    doit = sublime_api.ok_cancel_dialog("Are you sure you want to run the" +
 #                                        " following command? It will" +
 #                                        " overwrite the target" +
-#                                        " file.\n\nscp\n  " +
-#                                        localPath + "\n  " + remotePath +
-#                                        "/" +
-#                                        localPath[len(localProjectPath):])
+#                                        " file.\n\n" + cmd)
 #
 #    if doit is not True:
 #        return False
