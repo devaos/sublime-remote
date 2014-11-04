@@ -44,7 +44,7 @@ def get_vm_list(opt):
 def get_ssh_options(vm):
     """Pull the ssh options required to connect to a specific vagrant VM."""
 
-    p1 = subprocess.Popen(["/usr/bin/vagrant", "ssh-config", "33ca156"],
+    p1 = subprocess.Popen(["/usr/bin/vagrant", "ssh-config", vm],
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     p2 = subprocess.Popen(["/usr/bin/awk", "-v", "ORS= ",
