@@ -17,7 +17,7 @@ import remote.sublime_api as sublime_api
 
 
 def default_rsync_options():
-    return "-rlz"
+    return "-rlz --delete"
 
 
 def rsync_remote(fromPath, toPath, sshSettings, rsyncOptions):
