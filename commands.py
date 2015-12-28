@@ -48,9 +48,13 @@ def rsync_options(path, callback):
         if callback is not None:
             callback(settings)
 
+    options = sync_api.default_rsync_options()
+    found = sublime_api.project_by_path(w, path)
+    if found is not None and found["rsyncOptions"] != "":
+        options = found["rsyncOptions"]
+
     sublime_api.show_input_panel("Use these rsync options:",
-                                 sync_api.default_rsync_options(),
-                                 done_with_options, None, None)
+                                 options, done_with_options, None, None)
 
 
 # =============================================================================
