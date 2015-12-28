@@ -21,6 +21,41 @@ import remote.vagrant_api as vagrant_api
 # =============================================================================
 
 
+class RsyncOptionsCommand(sublime_plugin.TextCommand):
+    """Override default rsync options for Remote."""
+
+    def run(self, edit, paths):
+        sublime.set_timeout_async(lambda: rsync_options(paths[0], None), 0)
+
+
+def rsync_options(path, callback):
+    print("Local path", path)
+    w = sublime.active_window()
+
+    def done_with_options(userInput):
+        print("Options", userInput)
+
+        if len(userInput) == 0:
+            do_it(sync_api.default_rsync_options())
+            return True
+
+        do_it(userInput)
+        return True
+
+    def do_it(rsyncOptions):
+        settings = {"rsyncOptions": rsyncOptions}
+        sublime_api.update_project_settings(w, path, settings)
+        if callback is not None:
+            callback(settings)
+
+    sublime_api.show_input_panel("Use these rsync options:",
+                                 sync_api.default_rsync_options(),
+                                 done_with_options, None, None)
+
+
+# =============================================================================
+
+
 class AddRemoteCommand(sublime_plugin.TextCommand):
     """Map a new remote path to a local project path."""
 
@@ -118,11 +153,12 @@ def from_remote_async(path):
     found = sublime_api.project_by_path(w, path)
     if found is None or found["remotePath"] == "":
         add_remote_async(path, lambda o: sync_api.rsync_remote(
-                         o["remotePath"], path, o["remoteOptions"]))
+                         o["remotePath"], path, o["remoteOptions"],
+                         o["rsyncOptions"]))
         return True
 
     return sync_api.rsync_remote(found["remotePath"], found["path"],
-                                 found["remoteOptions"])
+                                 found["remoteOptions"], found["rsyncOptions"])
 
 # =============================================================================
 
@@ -141,11 +177,12 @@ def to_remote_async(path):
     found = sublime_api.project_by_path(w, path)
     if found is None or found["remotePath"] == "":
         add_remote_async(path, lambda o: sync_api.rsync_remote(path,
-                         o["remotePath"], o["remoteOptions"]))
+                         o["remotePath"], o["remoteOptions"],
+                         o["rsyncOptions"]))
         return True
 
     return sync_api.rsync_remote(found["path"], found["remotePath"],
-                                 found["remoteOptions"])
+                                 found["remoteOptions"], found["rsyncOptions"])
 
 # =============================================================================
 

@@ -16,7 +16,11 @@ import remote.sublime_api as sublime_api
 # =============================================================================
 
 
-def rsync_remote(fromPath, toPath, sshSettings):
+def default_rsync_options():
+    return "-rlz"
+
+
+def rsync_remote(fromPath, toPath, sshSettings, rsyncOptions):
     """Sync from a location to another location."""
 
     if fromPath is None or toPath is None:
@@ -25,16 +29,20 @@ def rsync_remote(fromPath, toPath, sshSettings):
     if len(fromPath) == 0 or len(toPath) == 0:
         return False
 
-    opts = ""
+    opts = default_rsync_options() + " "
+
+    if rsyncOptions is not None and len(rsyncOptions) > 0:
+        opts = rsyncOptions + " "
+
     if sshSettings != "":
-        opts = "-e 'ssh " + sshSettings + "'"
+        opts += "-e 'ssh " + sshSettings + "'"
 
     if re.match("/$", fromPath) is None:
         fromPath += "/"
 
     toPath = re.sub("/$", "", toPath)
 
-    rsync = "/usr/bin/rsync -aOz --delete --no-perms "
+    rsync = "/usr/bin/rsync "
     cmd = rsync + opts + " '" + fromPath + "'" + " '" + toPath + "'"
 
     doit = sublime_api.ok_cancel_dialog("Are you sure you want to run the" +
