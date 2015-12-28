@@ -65,7 +65,8 @@ def rsync_remote(fromPath, toPath, sshSettings, rsyncOptions):
     return True
 
 
-def scp_to_remote(localProjectPath, localPath, remotePath, sshSettings):
+def rsync_remote_file(localProjectPath, localPath, remotePath, sshSettings,
+                      rsyncOptions):
     """Sync a single local file to remote."""
 
     if localProjectPath is None or localPath is None or remotePath is None:
@@ -75,12 +76,21 @@ def scp_to_remote(localProjectPath, localPath, remotePath, sshSettings):
        len(remotePath) == 0:
         return False
 
+    opts = default_rsync_options() + " "
+
+    if rsyncOptions is not None and len(rsyncOptions) > 0:
+        opts = rsyncOptions + " "
+
+    if sshSettings != "":
+        opts += "-e 'ssh " + sshSettings + "'"
+
     if re.match("/$", localProjectPath) is None:
         localProjectPath += "/"
 
     remotePath = re.sub("/$", "", remotePath)
 
-    cmd = "scp " + sshSettings + " '" + localPath + "' '" + remotePath + \
+    rsync = "/usr/bin/rsync "
+    cmd = rsync + opts + " '" + localPath + "' '" + remotePath + \
         "/" + localPath[len(localProjectPath):] + "'"
 
 #    doit = sublime_api.ok_cancel_dialog("Are you sure you want to run the" +
@@ -91,7 +101,7 @@ def scp_to_remote(localProjectPath, localPath, remotePath, sshSettings):
 #    if doit is not True:
 #        return False
 
-    print("Scp command", cmd)
+    print("Rsync command", cmd)
 
     try:
         subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=True)

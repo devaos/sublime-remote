@@ -198,6 +198,7 @@ class RemoteEdit(sublime_plugin.EventListener):
         if found is None:
             return False
 
-        return sync_api.scp_to_remote(found["path"], filename,
-                                      found["remotePath"],
-                                      found["remoteOptions"])
+        return sync_api.rsync_remote_file(found["path"], filename,
+                                          found["remotePath"],
+                                          found["remoteOptions"],
+                                          found["rsyncOptions"])
