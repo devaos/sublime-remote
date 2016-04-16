@@ -44,7 +44,8 @@ def get_vm_list(opt):
 def get_ssh_options(vm):
     """Pull the ssh options required to connect to a specific vagrant VM."""
 
-    cmd = 'PATH="${PATH}:/usr/local/bin" /usr/bin/vagrant ssh-config ' + vm + '; exit 0';
+    cmd = 'PATH="${PATH}:/usr/local/bin" /usr/bin/vagrant ssh-config'
+    cmd = cmd + ' ' + vm + '; exit 0'
     print("ssh options cmd", cmd)
 
     out = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
