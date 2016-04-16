@@ -122,6 +122,7 @@ def add_remote_async(path, callback):
         print("VM selected", vm)
 
         sshOptions = vagrant_api.get_ssh_options(vm)
+        print("ssh options", sshOptions)
 
         if sshOptions != "":
             do_it(remotePath, sshOptions)
@@ -157,12 +158,15 @@ def from_remote_async(path):
     found = sublime_api.project_by_path(w, path)
     if found is None or found["remotePath"] == "":
         add_remote_async(path, lambda o: sync_api.rsync_remote(
-                         o["remotePath"], path, o["remoteOptions"],
-                         o["rsyncOptions"]))
+                         o.get("remotePath",""), path,
+                         o.get("remoteOptions",""),
+                         o.get("rsyncOptions","")))
         return True
 
-    return sync_api.rsync_remote(found["remotePath"], found["path"],
-                                 found["remoteOptions"], found["rsyncOptions"])
+    return sync_api.rsync_remote(found.get("remotePath",""),
+                                 found.get("path",""),
+                                 found.get("remoteOptions",""),
+                                 found.get("rsyncOptions",""))
 
 # =============================================================================
 
@@ -181,12 +185,15 @@ def to_remote_async(path):
     found = sublime_api.project_by_path(w, path)
     if found is None or found["remotePath"] == "":
         add_remote_async(path, lambda o: sync_api.rsync_remote(path,
-                         o["remotePath"], o["remoteOptions"],
-                         o["rsyncOptions"]))
+                         o.get("remotePath",""),
+                         o.get("remoteOptions",""),
+                         o.get("rsyncOptions","")))
         return True
 
-    return sync_api.rsync_remote(found["path"], found["remotePath"],
-                                 found["remoteOptions"], found["rsyncOptions"])
+    return sync_api.rsync_remote(found.get("path",""),
+                                 found.get("remotePath",""),
+                                 found.get("remoteOptions",""),
+                                 found.get("rsyncOptions",""))
 
 # =============================================================================
 
@@ -202,7 +209,7 @@ class RemoteEdit(sublime_plugin.EventListener):
         if found is None:
             return False
 
-        return sync_api.rsync_remote_file(found["path"], filename,
-                                          found["remotePath"],
-                                          found["remoteOptions"],
-                                          found["rsyncOptions"])
+        return sync_api.rsync_remote_file(found.get("path",""), filename,
+                                          found.get("remotePath",""),
+                                          found.get("remoteOptions",""),
+                                          found.get("rsyncOptions",""))

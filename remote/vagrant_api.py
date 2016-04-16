@@ -44,24 +44,20 @@ def get_vm_list(opt):
 def get_ssh_options(vm):
     """Pull the ssh options required to connect to a specific vagrant VM."""
 
-    p1 = subprocess.Popen(["/usr/bin/vagrant", "ssh-config", vm],
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    cmd = 'PATH="${PATH}:/usr/local/bin" /usr/bin/vagrant ssh-config ' + vm + '; exit 0';
+    print("ssh options cmd", cmd)
 
-    p2 = subprocess.Popen(["/usr/bin/awk", "-v", "ORS= ",
-                          '{if($1 && $2){print "-o " $1 "=" $2}}'],
-                          stdin=p1.stdout, stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE)
+    out = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
+    out = out.decode("utf-8").rstrip()
+    print("ssh options output", out)
 
-    opt = ""
-    while True:
-        buf = p2.stdout.readline()
-        decoded = buf.decode("utf-8").rstrip()
-        if decoded == "" and p2.poll() is not None:
-            break
-        if decoded == "":
-            continue
-        opt += decoded
+    obj = [s.strip().split(' ') for s in out.splitlines()]
+    opt = []
+    for field in obj:
+        if field[0] != "Host":
+            opt.append("=".join(field))
 
-        return opt
+    opt = "-o " + " -o ".join(opt)
+    print("ssh options parsed", opt)
 
     return opt
